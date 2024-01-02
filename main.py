@@ -5,12 +5,12 @@ import cv2 as cv
 
 
 deviceToIdMapping = { 
-    "Yglass": "27600759",
-    "Xglass": "27600799",
-    "Y": "27600801",
-    "X": "27261134",
-    "Z": "27600749",
-    "Camera": "20806"
+    "Yglass": "",
+    "Xglass": "",
+    "Y": "",
+    "X": "",
+    "Z": "",
+    "Camera": ""
 }
 
 # must be adjusted before each start
