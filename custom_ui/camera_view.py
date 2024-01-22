@@ -2,10 +2,10 @@ from tkinter import *
 import numpy
 from PIL import ImageTk, Image
 import time
-import asyncio
+# import asyncio
 import threading
 
-(height, width) = (270, 480)
+(height, width) = (860, 1240)
 
 allRed = numpy.zeros((width*height), dtype="uint8")
 allRed = [[255, 0, 0, 255] for _ in allRed]
@@ -26,22 +26,20 @@ def cameraView(frame: Frame, win: Tk):
 
     canvas = Canvas(frame, width=width, height=height)
     canvas.config(bg="white")
-    canvas.grid(column=10, row=3)
+    canvas.grid(column=60, row=1, rowspan=100, columnspan=2, padx=20)
 
     win.img = img
     img_container = canvas.create_image(width/2, height/2, image=img)
 
-    def update_image():
-        time.sleep(2)
-        global currentImg, allRed, allBlue
-        nextImg = allRed if not currentImg else allBlue
-        nextImg = ImageTk.PhotoImage(nextImg)
-        win.img = nextImg
-        canvas.itemconfig(img_container, image=win.img)
-        currentImg = not currentImg
+    # def update_image():
+    #     time.sleep(2)
+    #     global currentImg, allRed, allBlue
+    #     nextImg = allRed if not currentImg else allBlue
+    #     nextImg = ImageTk.PhotoImage(nextImg)
+    #     win.img = nextImg
+    #     canvas.itemconfig(img_container, image=win.img)
+    #     currentImg = not currentImg
 
-    def update_image_background_thread():
-        th = threading.Thread(target=update_image, args=())
-        th.start()
-
-    Button(text="swap img", command=update_image_background_thread).grid(column=10, row=10)
+    # # def update_image_background_thread():
+    # #     th = threading.Thread(target=update_image, args=())
+    # #     th.start()

@@ -1,0 +1,3 @@
+BUTTONS_BG_PRESSED = "#427ef5"
+BUTTONS_BG = "#b8b8b8"
+DISPLAY_LABELS_BG = "#ffffff"
