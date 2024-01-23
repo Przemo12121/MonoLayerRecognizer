@@ -1,5 +1,5 @@
 from tkinter import *
-from custom_ui.constants import BUTTONS_BG_PRESSED, BUTTONS_BG
+from custom_ui.constants import BUTTONS_BG_PRESSED, BUTTONS_BG, MAIN_WINDOW_BG
 
 class CameraControlsListener:
     def __init__(self,
@@ -33,8 +33,7 @@ def cameraControls(frame: Frame, win: Tk, listener: CameraControlsListener):
     buttons_width = 1
     buttons_height = 1
 
-    Label(frame, border=10).grid(column=4, row=0)
-    Label(frame, text="Move camera").grid(column=0, row=0, columnspan=5)
+    Label(frame, text="Move camera", background=MAIN_WINDOW_BG).grid(column=0, row=0, columnspan=5)
 
     btn_up = Button(frame, text="Y+", background=BUTTONS_BG, width=buttons_width, height=buttons_height, activebackground=BUTTONS_BG_PRESSED)
     btn_up.grid(column=1, row=1)
