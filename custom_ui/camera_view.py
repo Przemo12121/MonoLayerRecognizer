@@ -1,45 +1,27 @@
 from tkinter import *
-import numpy
 from PIL import ImageTk, Image
-import time
-# import asyncio
-import threading
 
-(height, width) = (860, 1240)
+class CameraView:
+    def __init__(self, frame: Frame, win: Tk, img_height: int, img_width: int):
+        self.__frame = frame
+        self.__win = win
+        self.__img_height = img_height
+        self.__img_width = img_width
+        self.__img = None
+        
+    def build(self, init_img: tuple[tuple[tuple[int,int,int,int]]]):
+        self.__img = Image.fromarray(init_img).convert("RGB")
 
-allRed = numpy.zeros((width*height), dtype="uint8")
-allRed = [[255, 0, 0, 255] for _ in allRed]
-allRed = numpy.reshape(allRed, (height,width,4)).astype("uint8")
-allRed = Image.fromarray(allRed).convert("RGB")
+        self.__img=ImageTk.PhotoImage(self.__img)
 
-allBlue = numpy.zeros((width*height), dtype="uint8")
-allBlue = [[0, 0, 255, 255] for _ in allBlue]
-allBlue = numpy.reshape(allBlue, (height,width,4)).astype("uint8")
-allBlue = Image.fromarray(allBlue).convert("RGB")
+        self.__canvas = Canvas(self.__frame, width=self.__img_width, height=self.__img_height)
+        self.__canvas.config(bg="white")
+        self.__canvas.grid(column=60, row=1, rowspan=100, columnspan=2, padx=20)
 
-currentImg = True
+        self.__img_container = self.__canvas.create_image(self.__img_width/2, self.__img_height/2, image=self.__img)
 
-def cameraView(frame: Frame, win: Tk):
-    img = allRed
-
-    img=ImageTk.PhotoImage(img)
-
-    canvas = Canvas(frame, width=width, height=height)
-    canvas.config(bg="white")
-    canvas.grid(column=60, row=1, rowspan=100, columnspan=2, padx=20)
-
-    win.img = img
-    img_container = canvas.create_image(width/2, height/2, image=img)
-
-    # def update_image():
-    #     time.sleep(2)
-    #     global currentImg, allRed, allBlue
-    #     nextImg = allRed if not currentImg else allBlue
-    #     nextImg = ImageTk.PhotoImage(nextImg)
-    #     win.img = nextImg
-    #     canvas.itemconfig(img_container, image=win.img)
-    #     currentImg = not currentImg
-
-    # # def update_image_background_thread():
-    # #     th = threading.Thread(target=update_image, args=())
-    # #     th.start()
+    def update_image(self, img: tuple[tuple[tuple[int,int,int,int]]]):
+        img = Image.fromarray(img).convert("RGB")
+        img = ImageTk.PhotoImage(img)
+        self.__img = img
+        self.__canvas.itemconfig(self.__img_container, image=self.__img)
