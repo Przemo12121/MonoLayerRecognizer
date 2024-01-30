@@ -1,85 +1,40 @@
+from custom_ui.gui import GUI, ProgramConfig
 from pylablib.devices.Thorlabs import kinesis, KinesisMotor, TLCamera
-import matplotlib.pyplot as mlp
+from thorlabs_utils.utils import replace_picture
+from threading import Thread
 from time import sleep
-import cv2 as cv
+import numpy
 
+config = ProgramConfig(
+    img_height = 860,
+    img_width = 1260,
+    start_x = 0,
+    start_y = 0,
+    end_x = 5000,
+    end_y = 5000,
+    exposure_ms = 180,
+    step_x = 1000,
+    step_y = 1000,
+    step_z = 1000,
+    motor_x = "27261134",
+    motor_y = "27600801",
+    motor_z = "27600749",
+    camera = "20806",
+    ai_model = "./models/monoLayerRecognizer_new"
+)
 
 deviceToIdMapping = { 
-    "Yglass": "",
-    "Xglass": "",
-    "Y": "",
-    "X": "",
-    "Z": "",
-    "Camera": ""
+    "Yglass": "27600759",
+    "Xglass": "27600799",
+    "Y": config.motor_x,
+    "X": config.motor_y,
+    "Z": config.motor_z,
+    "Camera": config.camera
 }
 
-# must be adjusted before each start
-stepX = 1000 # adjust motor step, about 3455 equals for 0.1mm
-stepY = 1000
-stepZ = 1000
-cameraExposureTime = 0.180 # seconds to wait for camrea to catch exposure
-startPoint = { "x": 0, "y": 0 }
-endPoint = { "x": 5000, "y": 5000 }
-
-def takeFocusedPicture(camera: TLCamera, zMotor: KinesisMotor):
-    global stepZ
-    
-    # try to adjust focus by going up
-    image, focus = tryAdjustFocus(camera, zMotor, stepZ)
-    
-    # try to adjust focus by going down
-    newImage, newFocus = tryAdjustFocus(camera, zMotor, -1 * stepZ)
-    
-    # return initials
-    return (image, focus) if focus > newFocus else (newImage, newFocus)
-    
-def tryAdjustFocus(
-    camera: TLCamera.ThorlabsTLCamera, 
-    zMotor: KinesisMotor, 
-    step: int
-):
-    global cameraExposureTime
-    sleep(cameraExposureTime)
-    
-    # reference values
-    previousPosition = zMotor.get_position()
-    referenceImage = camera.snap()
-    referenceFocus = cv.Laplacian(referenceImage, cv.CV_64F).var()
-
-    while (True):
-        sleep(cameraExposureTime)
-        
-        # update position
-        move(zMotor, zMotor.get_position() + step)
-        newPosition = zMotor.get_position()
-        
-        # break when motor cannot move
-        if (newPosition == previousPosition):
-            break
-        
-        # update new values
-        newImage = camera.snap() 
-        newFocus = cv.Laplacian(newImage, cv.CV_64F).var()
-        
-        # break when adjustment did not improve focus
-        if (newFocus <= referenceFocus):
-            move(zMotor, previousPosition)
-            break
-        
-        # update reference values
-        previousPosition = newPosition
-        referenceImage = newImage
-        referenceFocus = newFocus
-        
-        
-    return referenceImage, referenceFocus
-    
-def analysePicture(image):
-    pass # tensorflow   
-
-def move(motor: KinesisMotor, position):
-    motor.move_to(position)
-    motor.wait_move()
+init_img = numpy.zeros((config.img_width*config.img_height), dtype="uint8")
+init_img = [[0, 0, 0, 255] for _ in init_img]
+init_img = numpy.reshape(init_img, (config.img_height,config.img_width,4)).astype("uint8")
 
 with (
         KinesisMotor(deviceToIdMapping["Yglass"]) as yGlassMotor,
@@ -87,22 +42,21 @@ with (
         KinesisMotor(deviceToIdMapping["Z"]) as zMotor,
         TLCamera.ThorlabsTLCamera(deviceToIdMapping["Camera"]) as camera
 ):
-    #print(focus)
+    gui = GUI("Auto Mono Layer", lambda : print("")).build(config, init_img)
     
-    # X-axis
-    for posX in range(startPoint["x"], endPoint["x"], stepX):
-        pass    
-        # Y-axis
-        for posY in range(startPoint["y"], endPoint["y"], stepY): 
-            # image, focus = takeFocusedPicture(camera, zMotor)
-            pass
-            # move(yGlassMotor, posY)
-            #print(f"{str(posX)},{str(posY)}")
-            #sleep(0.5)
-            #img = takeFocusedPicture()
-            #analysePicture(img)
-            # handle result - save image with positions            
-            
-        #move(xGlassMotor, posX)
-
-print("Finished.")
+    def update_img():
+        global init_img
+        delay = config.exposure_ms / 1000
+        
+        while(True):
+            sleep(delay)
+            print("next")
+            replace_picture(init_img, camera, config.img_width, config.img_width)
+            gui.camera_view_panel.update_image(init_img)
+    
+    update_img_th = Thread(target=update_img, args=())
+    
+    update_img_th.start()
+    gui.run()
+    print("XD")
+    

@@ -78,7 +78,7 @@ class AutoControls:
 
         Label(self.__frame, text="", background=MAIN_WINDOW_BG).grid(column=0, row=26, columnspan=6, pady=4)
         buttons_height = 1
-        buttons_width = 3
+        buttons_width = 4
         start_btn = Button(self.__frame, text="Start", background=BUTTONS_BG, width=buttons_width, height=buttons_height, activebackground=BUTTONS_BG_PRESSED)
         start_btn.grid(column=1, row=27, columnspan=1)
         stop_btn = Button(self.__frame, text="Stop", background=BUTTONS_BG, width=buttons_width, height=buttons_height, activebackground=BUTTONS_BG_PRESSED)

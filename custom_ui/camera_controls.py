@@ -37,7 +37,7 @@ class CameraControls:
         self.__buttons_enabled = True
 
     def build(self):
-        buttons_width = 1
+        buttons_width = 3
         buttons_height = 1
 
         Label(self.__frame, text="Move camera", background=MAIN_WINDOW_BG).grid(column=0, row=0, columnspan=5)
