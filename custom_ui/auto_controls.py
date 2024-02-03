@@ -64,12 +64,12 @@ class AutoControls:
         exposure_entry.grid(column=2, row=25, columnspan=7)
 
         def on_set_start_clicked():
-            (x, y) = self.__motor_position_provider()
+            (x, y, _) = self.__motor_position_provider()
             x_start_variable.set(str(x))
             y_start_variable.set(str(y))
 
         def on_set_end_clicked():
-            (x, y) = self.__motor_position_provider()
+            (x, y, _) = self.__motor_position_provider()
             x_end_variable.set(str(x))
             y_end_variable.set(str(y))
 

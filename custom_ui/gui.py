@@ -3,9 +3,9 @@ import time
 from tkinter import *
 from tkinter import ttk
 import numpy
-from custom_ui.camera_controls import CameraControls, CameraControlsListener
+from custom_ui.camera_controls import CameraControls
 from custom_ui.camera_view import CameraView
-from custom_ui.info_display import infoDisplay
+from custom_ui.info_display import InfoDisplay
 from custom_ui.auto_controls import AutoControls, ProcessConfig
 from custom_ui.constants import MAIN_WINDOW_BG
 
@@ -28,14 +28,15 @@ class ProgramConfig:
         self.ai_model = ai_model
 
 class GUI:
-    def __init__(self, title, on_save_config):
+    def __init__(self, title, on_save_config, motor_mngr):
         self.__on_save_config = on_save_config
         self.__root = Tk(className="Auto Mono Layer")
+        self.__root.resizable(False, False)
+        self.__motor_mngr = motor_mngr
+        self.info_display = None
 
     def build(self, config: ProgramConfig, init_img):    
-        # TODO: devices integration
         (height, width) = (config.img_height, config.img_width)
-        
         
         frmStyle = ttk.Style()
         frmStyle.configure('My.TFrame', background=MAIN_WINDOW_BG)
@@ -44,56 +45,9 @@ class GUI:
         
         process_config = ProcessConfig((config.start_x, config.start_y), (config.end_x, config.end_y), config.step_x, config.exposure_ms)
         
-        # TODO device
-        xV = 100
-        yV = 100
-        zV = 100
-        def xUpListener(_):
-            global xV
-            xV += 10
-            x(xV)    
-        def xDownListener(_):
-            global xV
-            xV -= 10
-            x(xV)    
-        def yUpListener(_):
-            global yV
-            yV += 10
-            y(yV)    
-        def yDownListener(_):
-            global yV
-            yV -= 10
-            y(yV)    
-        def zUpListener(_):
-            global zV
-            zV += 10
-            z(zV)    
-        def zDownListener(_):
-            global zV
-            zV -= 10
-            z(zV)    
+        self.info_display = InfoDisplay(frm, self.__root).build()
         
-        def nil(_):
-            pass
-        
-        x, y, z = infoDisplay(frm, self.__root)
-        
-        cameraListener = CameraControlsListener(
-            on_x_up_pressed=xUpListener,
-            on_x_down_pressed=xDownListener,
-            on_y_up_pressed=yUpListener,
-            on_y_down_pressed=yDownListener,
-            on_z_up_pressed=zUpListener,
-            on_z_down_pressed=zDownListener,
-            on_x_up_released=nil,
-            on_y_up_released=nil,
-            on_z_up_released=nil,
-            on_x_down_released=nil,
-            on_y_down_released=nil,
-            on_z_down_released=nil,
-        )
-        
-        camera_controls_panel = CameraControls(frm, self.__root, cameraListener)
+        camera_controls_panel = CameraControls(frm, self.__root, self.__motor_mngr)
         camera_controls_panel.build()
         
         def start():
@@ -106,7 +60,7 @@ class GUI:
         
         auto_controls_panel = AutoControls(
             frm, self.__root, 
-            motor_position_provider=lambda : (120, 130), 
+            motor_position_provider=lambda : self.__motor_mngr.current_position, 
             on_start=start, 
             on_stop=end
         )

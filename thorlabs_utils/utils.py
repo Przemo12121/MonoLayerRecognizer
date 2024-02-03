@@ -5,35 +5,76 @@ import cv2 as cv
 import tensorflow as tf
 import numpy as np
 import json
+from threading import Thread
 
-
-cameraRgbRescale = 0.3 # camera does not stick to rgb format
-
-def replace_picture(old, camera, target_width, target_height):
-    img = camera.snap()
-    print(img.shape)
-    img = tf.image.resize(img, (target_width, target_height))
-    img = np.array(img).astype("float32") * cameraRgbRescale
+class MotorManager:
+    def __init__(self, x_motor: KinesisMotor, y_motor: KinesisMotor, z_motor: KinesisMotor, step: int):
+        self.__motors = (x_motor, y_motor, z_motor)
+        self.__step = step
+        self.__mv_vector = (0, 0, 0) # (x, y, z)
+        self.__running = False
+        self.__th = Thread(target=self.__manage_motors, args=())
+        self.current_position = (x_motor.get_position(), y_motor.get_position(), z_motor.get_position())
+        self.__callback = None
+        
+    def start_x_up(self, e: None):
+        self.__mv_vector = (1, 0, 0)
+        
+    def start_x_down(self, e: None):
+        self.__mv_vector = (-1, 0, 0)
+        
+    def start_y_up(self, e: None):
+        self.__mv_vector = (0, 1, 0)
+        
+    def start_y_down(self, e: None):
+        self.__mv_vector = (0, -1, 0)
     
-    shape = old.shape
-    for i in range(0, shape[0]):
-        for j in range(0, shape[1]):
-            old[i][j][0] = img[i][j][0]
-            old[i][j][1] = img[i][j][1]
-            old[i][j][2] = img[i][j][2]
+    def start_z_up(self, e: None):
+        self.__mv_vector = (0, 0, 1)
+        
+    def start_z_down(self, e: None):
+        self.__mv_vector = (0, 0, -1)
+        
+    def stop_all(self, e: None):
+        self.__mv_vector = (0, 0, 0)
+     
+    def __manage_motors(self):
+        self.__update_pos()
+        
+        while self.__running:
+            for i in range(0, 3):
+                if self.__mv_vector[i] == 0:
+                    continue
+                
+                self.__motors[i].move_by(self.__mv_vector[i] * self.__step)
+                self.__motors[i].wait_move()
+                
+            self.__update_pos()
+        
+            if self.__callback is not None:
+                self.__callback()
+                
+            sleep(0.01)
+            
+    def __update_pos(self):
+        self.current_position = (self.__motors[0].get_position(), self.__motors[1].get_position(), self.__motors[2].get_position())
 
+    def begin(self, callback):
+        self.__running = True
+        self.__callback = callback
+        self.__th.start()
+        
+    def finish(self):
+        self.__running = False
+        self.__mv_vector = (0, 0, 0)
+        
 
 # TODO remove
 if (False):
-    deviceToIdMapping = { 
-        "Yglass": "27600759",
-        "Xglass": "27600799",
-        "Y": config.motor_x,
-        "X": config.motor_y,
-        "Z": config.motor_z,
-        "Camera": config.camera
-    }
-    
+    def move(motor: KinesisMotor, position):
+        motor.move_to(position)
+        motor.wait_move()
+
     config = None # TODO
     
     modelPath = config.ai_model
@@ -103,7 +144,7 @@ if (False):
     def analysePicture(image):
         pass # tensorflow   
     
-    def move(motor: KinesisMotor, position):
+    def move_rm(motor: KinesisMotor, position):
         motor.move_to(position)
         motor.wait_move()
     #TLCamera.ThorlabsTLCamera("").set_exposure(800)
