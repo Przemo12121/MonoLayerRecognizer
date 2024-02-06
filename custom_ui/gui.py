@@ -1,8 +1,5 @@
-import threading
-import time
 from tkinter import *
 from tkinter import ttk
-import numpy
 from custom_ui.camera_controls import CameraControls
 from custom_ui.camera_view import CameraView
 from custom_ui.info_display import InfoDisplay
@@ -10,7 +7,7 @@ from custom_ui.auto_controls import AutoControls, ProcessConfig
 from custom_ui.constants import MAIN_WINDOW_BG
 
 class ProgramConfig:
-    def __init__(self, img_height, img_width, start_x, start_y, end_x, end_y, exposure_ms, step_x, step_y, step_z, motor_x, motor_z, motor_y, camera, ai_model):
+    def __init__(self, img_height, img_width, start_x, start_y, end_x, end_y, exposure_ms, step_x, step_y, step_z, motor_x, motor_z, motor_y, camera, ai_model, output_dir, treshold):
         self.img_height = img_height
         self.img_width = img_width
         self.start_x = start_x
@@ -26,11 +23,14 @@ class ProgramConfig:
         self.motor_z = motor_z
         self.camera = camera
         self.ai_model = ai_model
+        self.output_dir = output_dir
+        self.treshold = treshold
 
 class GUI:
-    def __init__(self, title, on_save_config, motor_mngr):
-        self.__on_save_config = on_save_config
-        self.__root = Tk(className="Auto Mono Layer")
+    def __init__(self, title, on_start, on_stop, motor_mngr):
+        self.__on_start = on_start
+        self.__on_stop = on_stop
+        self.__root = Tk(className=title)
         self.__root.resizable(False, False)
         self.__motor_mngr = motor_mngr
         self.info_display = None
@@ -43,20 +43,27 @@ class GUI:
         frm = ttk.Frame(self.__root, padding=10, style='My.TFrame')
         frm.grid()
         
-        process_config = ProcessConfig((config.start_x, config.start_y), (config.end_x, config.end_y), config.step_x, config.exposure_ms)
-        
+        process_config = ProcessConfig(
+            start=(config.start_x, config.start_y), 
+            end=(config.end_x, config.end_y), 
+            steps=(config.step_x, config.step_y, config.step_z), 
+            exposure_time_ms=config.exposure_ms,
+            treshold=config.treshold,
+            output_dir_path=config.output_dir
+        )
+
         self.info_display = InfoDisplay(frm, self.__root).build()
         
         camera_controls_panel = CameraControls(frm, self.__root, self.__motor_mngr)
         camera_controls_panel.build()
         
-        def start():
+        def start(config: ProcessConfig):
             camera_controls_panel.switch_buttons(False)
-            print("Process started")
+            self.__on_start(config)
         
         def end():
             camera_controls_panel.switch_buttons(True)
-            print("Process ended")
+            self.__on_stop()
         
         auto_controls_panel = AutoControls(
             frm, self.__root, 
